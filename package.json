@@ -1,0 +1,22 @@
+{
+    "name": "rideflow-design",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "seed": "dotenv -e .env -- tsx prisma/seed.ts",
+        "proof": "dotenv -e .env -- tsx prisma/proof.ts",
+        "queries": "dotenv -e .env -- tsx prisma/queries.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "pg": "^8.23.0",
+        "prisma": "^5.22.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20",
+        "@types/pg": "^8.23.1",
+        "dotenv-cli": "^11.0.0",
+        "tsx": "^4.23.13",
+        "typescript": "^5"
+    }
+}

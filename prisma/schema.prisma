@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Rider {
+  id                     String    @id @default(cuid())
+  name                   String
+  email                  String    @unique
+  phone                  String
+  defaultPaymentMethodId String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  trips    Trip[]
+  payments Payment[]
+
+  @@index([deletedAt])
+}
+
+model Driver {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  phone         String
+  licenseNumber String       @unique
+  vehicleMake   String
+  vehicleModel  String
+  vehiclePlate  String       @unique
+  status        DriverStatus @default(offline)
+  rating        Decimal      @default(0) @db.Decimal(3, 2)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  trips Trip[]
+
+  @@index([status])
+}
+
+enum DriverStatus {
+  offline
+  online
+  on_trip
+}
+
+model Trip {
+  id       String     @id @default(cuid())
+  riderId  String
+  rider    Rider      @relation(fields: [riderId], references: [id])
+  driverId String?
+  driver   Driver?    @relation(fields: [driverId], references: [id])
+  status   TripStatus @default(requested)
+
+  pickupAddress  String
+  pickupLat      Decimal @db.Decimal(9, 6)
+  pickupLng      Decimal @db.Decimal(9, 6)
+  dropoffAddress String
+  dropoffLat     Decimal @db.Decimal(9, 6)
+  dropoffLng     Decimal @db.Decimal(9, 6)
+
+  fareAmountMinor Int?
+  fareCurrency    String  @default("NGN") @db.Char(3)
+  distanceMeters  Int?
+  durationSeconds Int?
+
+  driverNameSnapshot  String?
+  driverPlateSnapshot String?
+
+  requestedAt DateTime  @default(now())
+  matchedAt   DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment?
+  reviews Review[]
+
+  @@index([driverId, status])
+}
+
+enum TripStatus {
+  requested
+  matched
+  arriving
+  in_progress
+  completed
+  cancelled
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  tripId           String        @unique
+  trip             Trip          @relation(fields: [tripId], references: [id])
+  riderId          String
+  rider            Rider         @relation(fields: [riderId], references: [id])
+  amountMinor      Int
+  currency         String        @db.Char(3)
+  status           PaymentStatus @default(pending)
+  provider         String
+  providerChargeId String?       @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
+model Review {
+  id         String      @id @default(cuid())
+  tripId     String
+  trip       Trip        @relation(fields: [tripId], references: [id])
+  authorType ReviewParty
+  authorId   String
+  targetType ReviewParty
+  targetId   String
+  rating     Int
+  comment    String?
+  createdAt  DateTime    @default(now())
+
+  @@unique([tripId, authorType])
+  @@index([targetType, targetId])
+}
+
+enum ReviewParty {
+  rider
+  driver
+}
